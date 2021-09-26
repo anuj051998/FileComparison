@@ -20,7 +20,7 @@ namespace File_Comparison.Models
         public FileInfo<string> path { get; set; }
         public bool isSame { get; set; }
         public string message { get; set; }
-
+        public string parentDirectory { get; set; }
         public OutputModel()
         {
             isSame = false;

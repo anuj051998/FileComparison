@@ -33,42 +33,62 @@ namespace File_Comparison.Repositiry
             string[] li = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
             foreach (var i in li)
             {
+                string temporaryFileName = Path.GetFileName(i);
+                string tempFilePath = Path.GetFullPath(i);
                 try
                 {
                     //checking if the file name is already present in Dictionry or not
-                    string existing = prop.Where(x => x.fileName == Path.GetFileName(i)).Select(x => x.fileName).FirstOrDefault();
-                    if (string.IsNullOrEmpty(existing))
+                    var exists = prop.Where(x => x.fileName == temporaryFileName).Select(x => x.fileName).FirstOrDefault();
+                    int count = 2;
+                    while (!string.IsNullOrEmpty(exists))
                     {
-                        prop.Add(new FileProperties()
-                        {
-                            fileName = Path.GetFileName(i),
-                            filePath = Path.GetFullPath(i),
-                            fileType = getContentType(Path.GetFileName(i)),
-                            numberOfLines = File.ReadLines(Path.GetFullPath(i)).Count()
-                        }); 
+                        var splitted = tempFilePath.Split("\\");
+                        string tempRootPath = splitted[splitted.Length - count++];
+                        temporaryFileName = $"{tempRootPath}\\{temporaryFileName}";
+                        exists = prop.Where(x => x.fileName == temporaryFileName).Select(x => x.fileName).FirstOrDefault();
                     }
-                    else
+                    prop.Add(new FileProperties()
                     {
-                        var s = Path.GetFullPath(i).Split('\\');
-                        existing = "";
-                        int count = 2;
-                        string tempName = "";
-                        //it was causing exception because of adding duplicate keys in Dictionary
-                        //adding parent directory name with files 
-                        while (existing != null)
-                        {
-                            tempName = s[s.Length - count++] + "/" + tempName;
-                            string checkName = $"{tempName}/{Path.GetFileName(i)}";
-                            existing = prop.Where(x => x.fileName == checkName).Select(x => x.fileName).FirstOrDefault();
-                        }
-                        prop.Add(new FileProperties()
-                        {
-                            fileName = tempName + "/" + Path.GetFileName(i),
-                            filePath = Path.GetFullPath(i),
-                            fileType = getContentType(Path.GetFileName(i)),
-                            numberOfLines = File.ReadLines(Path.GetFullPath(i)).Count()
-                        });
-                    }
+                        fileName = temporaryFileName,
+                        filePath = Path.GetFullPath(i),
+                        fileType = getContentType(Path.GetFileName(i)),
+                        numberOfLines = File.ReadLines(Path.GetFullPath(i)).Count(),
+                        //parentDirectory = Path.GetFullPath(i).Split("\\")[Path.GetFullPath(i).Split("\\").Length - 2]
+                    });
+                    //string existing = prop.Where(x => x.fileName == Path.GetFileName(i)).Select(x => x.fileName).FirstOrDefault();
+                    //if (string.IsNullOrEmpty(existing))
+                    //{
+                    //    prop.Add(new FileProperties()
+                    //    {
+                    //        fileName = Path.GetFileName(i),
+                    //        filePath = Path.GetFullPath(i),
+                    //        fileType = getContentType(Path.GetFileName(i)),
+                    //        numberOfLines = File.ReadLines(Path.GetFullPath(i)).Count(),
+                    //        parentDirectory = Path.GetFullPath(i).Split("\\")[Path.GetFullPath(i).Split("\\").Length - 2]
+                    //    }); 
+                    //}
+                    //else
+                    //{
+                    //    var s = Path.GetFullPath(i).Split('\\');
+                    //    existing = "";
+                    //    int count = 2;
+                    //    string tempName = "";
+                    //    //it was causing exception because of adding duplicate keys in Dictionary
+                    //    //adding parent directory name with files 
+                    //    while (existing != null)
+                    //    {
+                    //        tempName = s[s.Length - count++] + "/" + tempName;
+                    //        string checkName = $"{tempName}/{Path.GetFileName(i)}";
+                    //        existing = prop.Where(x => x.fileName == checkName).Select(x => x.fileName).FirstOrDefault();
+                    //    }
+                    //    prop.Add(new FileProperties()
+                    //    {
+                    //        fileName = tempName + "/" + Path.GetFileName(i),
+                    //        filePath = Path.GetFullPath(i),
+                    //        fileType = getContentType(Path.GetFileName(i)),
+                    //        numberOfLines = File.ReadLines(Path.GetFullPath(i)).Count()
+                    //    });
+                    //}
                 }
                 catch(Exception ex) { }
             }
@@ -140,6 +160,7 @@ namespace File_Comparison.Repositiry
                         model.message = $"The following file not found in folder two:  {i.fileName} ";
                         model.lines = new FileInfo<int> { fileOne = i.numberOfLines, fileTwo = 0 };
                     }
+                    model.parentDirectory = i.parentDirectory;
                     opModel.Add(model);
                 }
             }
