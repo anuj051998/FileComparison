@@ -1,0 +1,96 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div class="container">
+    <br />
+    <br />
+    <br />
+    <br />
+    <form method="POST" action="../Home/readDirectory" id="myForm">
+        <table style=" width: 80%">
+            <thead>
+                <tr>
+                    <td>Folder Path <span class="msg-one"><i class="fa fa-folder"></i></span></td>
+                    <td>Folder Path <span class="msg-two"><i class="fa fa-folder"></i></span></td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <textarea type="text" class="form-control one" placeholder="Folder path one" name="folderOnePath" aria-label="Folder Path">C:\Users\896852\OneDrive - Cognizant\Desktop\test\Repo2</textarea>
+                    </td>
+                    <td>
+                        <textarea type="text" class="form-control two" placeholder="Folder path two" name="folderTwoPath" aria-label="Folder Path">C:\Users\896852\OneDrive - Cognizant\Desktop\test\Repos</textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <input type="button" name="Submit" value="Submit" style="float:right" class="btn btn-primary submit-btn" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script src="~/js/jquery-3.4.1.min.js"></script>
+<script src="~/js/sweetalert.js"></script>
+<script>
+    
+    $(".submit-btn").on("click", function (data)
+    {
+        //data.preventDefault()
+        let file_one = $(".msg-one").html()
+        let file_two = $(".msg-two").html()
+        if (file_one != file_two)
+        {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'You can not compare these two',
+            })
+        }
+        else
+        {
+            if (file_one.includes("file") && file_two.includes("file"))
+            {
+                window.location.href = "../../Home/readContents?pathOne=" + $(".one").val() + "&pathTwo=" + $(".two").val()
+            }
+            else
+            {
+                $("#myForm").submit();
+            }
+        }
+        console.log(file_one)
+        console.log(file_two)
+    })
+
+
+    $(".form-control").on("input", function (e) {
+        $.get("../../Home/verifyPath?path=" + $(this).val(), (response) =>
+        {
+            var email = $(this).attr("class").split(" ")[1];
+            if (!response.includes("times"))
+            {
+                $(".msg-" + email).html(response).addClass("text-success").removeClass("text-danger")
+                $(".submit-btn").removeAttr("disabled")
+            }
+            else
+            {
+                $(".msg-" + email).html(response).addClass("text-danger").removeClass("text-success")
+                $(".submit-btn").attr("disabled", "true");
+            }
+        })
+    })
+
+</script>

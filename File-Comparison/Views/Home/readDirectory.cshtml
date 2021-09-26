@@ -1,0 +1,185 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    //Layout = null;
+}
+
+
+<html>
+<head>
+    <script src="~/js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="~/css/datatables.min.css" />
+    @*<script type="text/javascript" src="~/js/pdfmake.min.js"></script>*@
+    @*<script type="text/javascript" src="~/js/vfs_fonts.js"></script>*@
+    <script type="text/javascript" src="~/js/datatable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="~/css/Site.css">
+    <script src="~/js/dataTables.responsive.min.js"></script>
+    <script src="~/js/dataTables.buttons.min.js"></script>
+    <script src="~/js/buttons.colVis.min.js"></script>
+    <script src="~/js/dataTables.editor.min.js"></script>
+
+    <style>
+        .fa-trash {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container_">
+        <span class="fileNameOne" name="@ViewBag.fileNameOne"></span>
+        <span class="fileNameTwo" name="@ViewBag.fileNameTwo"></span>
+        <br />
+        Comparing Files between: <strong> @ViewBag.fileNameOne</strong> & <strong>@ViewBag.fileNameTwo</strong>
+        <br />
+        Total Number of Files in: <strong>pathOne: <span class="totalPathOne"></span></strong> &  <strong>pathTwo:<span class="totalPathTwo"></span></strong>
+        <br />
+        Comparing only: <span id="comp"></span>
+        <hr />
+        <table class="table table-bordered table-hover table-striped table-responsive">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th class="all">FileOne</th>
+                    <th class="all">FileTwo</th>
+                    <th class="all">IsSimilar</th>
+                    @*<th class="none">FileType</th>*@
+                    <th class="all noExport">Options</th>
+                    <th class="none">FileOneLines</th>
+                    <th class="none">FileOnePath</th>
+                    <th class="none">FileTwoLines</th>
+                    <th class="none">FileTwoPath</th>
+                </tr>
+            </thead>
+            <tbody id="body">
+            </tbody>
+        </table>
+        <div class="loader table-loader text-primary" role="status" style="margin: auto">
+        </div>
+        <hr />
+    </div>
+    <script>
+        var data_table = undefined;
+        function Delete(id)
+        {
+            data_table.row("." + id).remove().draw(false);;
+        }
+        function read()
+        {
+            $.get("../../Home/getList?fileOne=" + $(".fileNameOne").attr("name") + "&fileTwo=" + $(".fileNameTwo").attr("name"), (data) =>
+            {
+                var arr = data.split(":")
+                $(".totalPathOne").text(arr[0])
+                $(".totalPathTwo").text(arr[1])
+            })
+        }
+        function readComp()
+        {
+            $.get("../../Home/getCheckList", (data) =>
+            {
+                $("#comp").text(data)
+            })
+        }
+        $(document).ready(function ()
+        {
+            $.ajax({
+                type: "POST",
+                url: "../../Home/read",
+                data:
+                {
+                    folderOnePath: $(".fileNameOne").attr("name"), folderTwoPath: $(".fileNameTwo").attr("name")
+                },
+                success: function (data)
+                {
+                    var raw = ""
+                    var temp = ""
+                    let count = 1
+                    data.forEach(function (i)
+                    {
+                        console.log(i)
+                        console.log(i["isSame"])
+                        let txt = i["isSame"] == true ? "<i class='fa fa-check text-success'><span style='display:none'>Yes</span>" : "<i class='fa fa-times text-danger'><span style='display:none'>No</span>"
+                        try
+                        {
+                            temp = ""
+                            temp += "<tr class='"+(count)+"'"
+                            //temp += i["isSame"] == false ? 'red' : 'green'
+                            temp += "><td>" + (count) + "</td><td title='" + i["filePath"]["fileOne"] + "'>"
+                            temp += i["fileName"]["fileOne"]
+                            temp += "</td><td title='" + i["filePath"]["fileTwo"] + "'>"
+                            temp += i["fileName"]["fileTwo"]
+                            temp += "</td>"
+                            temp += "<td class='text-center'>"
+                            temp += txt
+                            temp += "</td><td><a target='_blank' href='../../Home/readContents?pathOne=" + i["filePath"]["fileOne"] + "&pathTwo=" + i["filePath"]["fileTwo"] + "'> <i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(" + count + ")' class='fa fa-trash'></i></a> </td>"
+                            temp += "<td>"+i["lines"]["fileOne"]+"</td>"
+                            temp += "<td>" + i["filePath"]["fileOne"]+"</td><td>"
+                            temp += i["lines"]["fileTwo"]
+                            temp += "</td><td>" + i["filePath"]["fileTwo"]+"</td></td></tr>"
+                        }
+                        catch
+                        {
+                            temp = ""
+                            temp += "<tr class='" + (count) +"'>"
+                            temp += "<td>" + (count) + "</td><td>"
+                            temp += i["fileName"]["fileOne"] + "</td><td>" + i["fileName"]["fileTwo"] + "</td>"
+                            let lineOne = "";
+                            let lineTwo = "";
+                            let pathOne = "Not Available";
+                            let pathTwo = "Not Available";
+                            try
+                            {
+                                pathOne = i["filePath"]["fileOne"];
+                                lineOne = i["lines"]["fileOne"]
+                            } catch { }
+                            try
+                            {
+                                pathTwo = i["filePath"]["fileTwo"];
+                                lineTwo = i["lines"]["fileTwo"]
+                            } catch { }
+                            temp += "<td class='text-center'>" + txt + "</td>"
+                            temp += "<td><a target='_blank' href='../../Home/readContents?pathOne=" + pathOne + "&pathTwo=" + pathTwo + "'><i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(" + count + ")' class='fa fa-trash'></i></a></td>"
+                            temp += "<td>" + lineOne + "</td><td>" + pathOne + "</td>"
+                            temp += "<td>" + lineTwo + "</td><td>" + pathTwo + "</td></tr>"
+                        }
+                        raw += temp
+                        count++
+                    })
+                    $(".table-loader").hide()
+                    $("#body").html(raw)
+                    data_table = $('.table').DataTable({
+                        responsive: true, dom: 'Bfrtip',
+                        ////rowReorder: true,
+                        //select: {
+                        //    style: 'multi'
+                        //},
+                        dom: 'Bfrtip',
+                        buttons: [
+                            {
+                                extend: 'excelHtml5',
+                                footer: true,
+                                exportOptions:
+                                {
+                                    columns: [0, 1, 2, 3, 5, 6, 7, 8]
+                                }
+                            },
+                            //'excelHtml5',
+                            'csvHtml5',
+                            'colvis'//,
+                            //{
+                            //    extend: 'pdf',
+                            //    footer: true,
+                            //    exportOptions: {
+                            //        columns: [0, 1, 2, 3,5,6,7,8]
+                            //    }
+                            //}
+                        ]
+                    });
+                    readComp()
+                    read()
+                }
+            })
+        })
+    </script>
+</body>
+</html>

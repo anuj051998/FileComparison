@@ -1,0 +1,170 @@
+﻿@{
+    ViewBag.Title = "File Compare";
+    Layout = null;
+}
+<style>
+    body, html {
+        padding: 0;
+        margin: 0;
+        height: calc(100vh - 2em);
+    }
+
+    #container {
+        height: 100%;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .actions {
+        height: 2em;
+        display: flex;
+        align-items: center;
+        border-top: 1px solid #aaa;
+        padding: 0.2em;
+        box-sizing: border-box;
+    }
+
+    label {
+        padding-right: 0.3em;
+    }
+</style>
+<div class="container-fluid" style="padding: 10px">
+    <span style="display:none" class="pathOne" path="@ViewBag.PathOne"></span>
+    <span style="display:none" class="pathTwo" path="@ViewBag.PathTwo"></span>
+    <section id="compare"></section>
+    <section class="actions">
+        <label class="text-primary">Inline</label>
+        <input type="checkbox" class="inline-it">
+    </section>
+</div>
+<script src="~/js/jquery.min.js"></script>
+<script src="~/js/sweetalert.js"></script>
+<script src="~/js/toastr.min.js"></script>
+<link href="~/css/toastr.min.css" rel="stylesheet" />
+<script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
+<script>
+    require.config(
+        {
+            paths:
+            {
+                'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.10.1/min/vs'
+            }
+        });
+    var editor = undefined
+    $(window).keypress(function (event)
+    {
+        if (!(event.which == 115 && (navigator.platform.match("Mac") ? event.metaKey : event.ctrlKey)) && !(event.which == 19)) return true;
+        event.preventDefault();
+        return false;
+    });
+    $(document).keydown(function (event)
+    {
+        if (event.which == 83 && (navigator.platform.match("Mac") ? event.metaKey : event.ctrlKey)) {
+            event.preventDefault();
+            save();
+            return false;
+        }
+    });
+    function checkSimilar()
+    {
+        //console.log(editor._lineChanges)
+        if (editor._lineChanges.length == 0)
+        {
+            Swal.fire('Both files are same')
+        }
+    }
+    function save()
+    {
+        //console.log(editor)
+        var raw = editor.getModel().modified.getValue()
+        $.ajax({
+            type: "POST",
+            url: "../Home/updateContent",
+            data: { filePath: $(".pathTwo").attr("path"), content: raw },
+            success: function (data) {
+                if (data == "Ok")
+                    toastr.success("Saved successfully");
+                else
+                    toastr.info(data)
+            }
+        })
+        checkSimilar()
+    }
+    function setup(rawOne, rawTwo, languageModeOne, languageModeTwo)
+    {
+        require(['vs/editor/editor.main'], () =>
+        {
+            editor = monaco.editor.createDiffEditor(document.getElementById('compare'),
+                {
+                theme: "vs-dark",
+                language: 'C#',
+                glyphMargin: true,
+                renderWhitespace: true
+            });
+            editor.setModel(
+                {
+                    original: monaco.editor.createModel(`${rawOne}`, languageModeOne),
+                    modified: monaco.editor.createModel(`${rawTwo}`, languageModeTwo),
+                });
+            document.querySelector('.inline-it').addEventListener('change', (e) =>
+            {
+                editor.updateOptions(
+                    {
+                        renderSideBySide: !e.target.checked
+                    });
+            });
+            checkSimilar()
+        })
+    }
+    class temp
+    {
+        tempValue = undefined
+    }
+    function getData(path)
+    {
+        $.ajax({
+            type: "GET",
+            url: "../../Home/readFileContent?fileName=" + path,
+            async: false,
+            success: function (data)
+            {
+                temp.tempValue = data
+            }
+        })
+        return temp.tempValue;
+    }
+    $(document).ready(function ()
+    {
+        var splittedOne = $(".pathOne").attr("path").split(".")
+        var splittedTwo = $(".pathTwo").attr("path").split(".")
+
+        var extensionOne = "." + splittedOne[splittedOne.length - 1]
+        var extensionTwo = "." + splittedTwo[splittedTwo.length - 1]
+
+        languageModeOne = "plaintext"
+        languageModeTwo = "plaintext"
+
+        require(['vs/editor/editor.main'], () =>
+        {
+            monaco.languages.getLanguages().forEach(function (language)
+            {
+                if (language["extensions"].includes(extensionOne))
+                {
+                    languageModeOne = language["id"]
+                }
+                if (language["extensions"].includes(extensionTwo)) {
+                
+                    languageModeTwo = language["id"]
+                }
+            })
+            if (languageModeOne == languageModeTwo) {
+                toastr.info("Content type is " + languageModeOne)
+            }
+            else {
+                toastr.info("Right side content type is " + languageModeTwo);
+                toastr.info("Left side content type is " + languageModeOne);
+            }
+            setup(getData($(".pathOne").attr("path")), getData($(".pathTwo").attr("path")), languageModeOne, languageModeTwo);
+        })
+    })
+</script>
