@@ -18,6 +18,8 @@
     <script src="~/js/dataTables.buttons.min.js"></script>
     <script src="~/js/buttons.colVis.min.js"></script>
     <script src="~/js/dataTables.editor.min.js"></script>
+    <script src="~/js/toastr.min.js"></script>
+    <link href="~/css/toastr.min.css" rel="stylesheet" />
 
     <style>
         .fa-trash {
@@ -36,7 +38,7 @@
         <br />
         Comparing only: <span id="comp"></span>
         <hr />
-        <table class="table table-bordered table-hover table-striped table-responsive">
+        <table class="table table-bordered table-hover table-striped table-responsive" id="dataTable">
             <thead>
                 <tr>
                     <th>#</th>
@@ -60,10 +62,10 @@
     </div>
     <script>
         var data_table = undefined;
-        //function Delete(id)
-        //{
-        //    data_table.row("." + id).remove().draw(false);;
-        //}
+        function Delete(el)
+        {
+            data_table.row($(el).parent().parent().parent("tr")).remove().draw(false);;
+        }
         function read()
         {
             $.get("../../Home/getList?fileOne=" + $(".fileNameOne").attr("name") + "&fileTwo=" + $(".fileNameTwo").attr("name"), (data) =>
@@ -86,12 +88,6 @@
         function DeleteRows() {
             data_table.clear().draw()
         }
-        //$(".delete-btn").on("click", function (d) {
-        //    var tr = $(d).parent("tr")
-        //    console.log(tr)
-        //    data_table.row(tr).remove().draw(false);;
-
-        //})
         function load_data_to_table(data) {
             DeleteRows()
             let count = 1
@@ -115,14 +111,12 @@
                 let tdTwo = i["fileName"]["fileOne"]
                 let tdThree = i["fileName"]["fileTwo"]
                 let tdFour = txt
-                let tdFive = "<a target='_blank' href='../../Home/readContents?pathOne=" + i["filePath"]["fileOne"] + "&pathTwo=" + i["filePath"]["fileTwo"] + "'> <i class='fa fa-eye'></i></a>"
+                let tdFive = "<a target='_blank' href='../../Home/readContents?pathOne=" + i["filePath"]["fileOne"] + "&pathTwo=" + i["filePath"]["fileTwo"] + "'> <i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(this)' class='fa fa-trash'></i></a>"
                 let tdSix = fileOneLines
                 let tdSeven = fileOnePath
                 let tdEight = fileTwoLines
                 let tdNine = fileTwoPath
-                let tr = data_table.row.add([tdOne, tdTwo, tdThree, tdFour, tdFive, tdSix, tdSeven, tdEight, tdNine]).draw(false);
-                $(tr).addClass(count);
-                $(tr).attr("class",count)
+                data_table.row.add([tdOne, tdTwo, tdThree, tdFour, tdFive, tdSix, tdSeven, tdEight, tdNine]).draw(false);
                 count++
             })
         }
@@ -131,8 +125,9 @@
 
         function reloadData()
         {
-            $(".table").hide()
-            $(".table-loader").show()
+            //$(".table").hide()
+            //$(".table-loader").show()
+            toastr.info("Reloading Data")
 
             $.ajax(
                 {
@@ -145,13 +140,12 @@
                     success: function (data)
                     {
                         load_data_to_table(data)
-                        $(".table-loader").hide()
+                        toastr.info("Reload Successful")
+                        //$(".table-loader").hide()
 
-                        $(".table").show()
+                        //$(".table").show()
                     }
                 })
-            
-
         }
         
 

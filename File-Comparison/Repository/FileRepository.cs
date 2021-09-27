@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
 
 namespace File_Comparison.Repositiry
 {
@@ -160,7 +158,7 @@ namespace File_Comparison.Repositiry
                         model.message = $"The following file not found in folder two:  {i.fileName} ";
                         model.lines = new FileInfo<int> { fileOne = i.numberOfLines, fileTwo = 0 };
                     }
-                    model.parentDirectory = i.parentDirectory;
+                   // model.parentDirectory = i.parentDirectory;
                     opModel.Add(model);
                 }
             }
