@@ -18,6 +18,8 @@
     <script src="~/js/dataTables.buttons.min.js"></script>
     <script src="~/js/buttons.colVis.min.js"></script>
     <script src="~/js/dataTables.editor.min.js"></script>
+    <script src="~/js/toastr.min.js"></script>
+    <link href="~/css/toastr.min.css" rel="stylesheet" />
 
     <style>
         .fa-trash {
@@ -36,7 +38,7 @@
         <br />
         Comparing only: <span id="comp"></span>
         <hr />
-        <table class="table table-bordered table-hover table-striped table-responsive">
+        <table class="table table-bordered table-hover table-striped table-responsive" id="dataTable">
             <thead>
                 <tr>
                     <th>#</th>
@@ -60,9 +62,9 @@
     </div>
     <script>
         var data_table = undefined;
-        function Delete(id)
+        function Delete(el)
         {
-            data_table.row("." + id).remove().draw(false);;
+            data_table.row($(el).parent().parent().parent("tr")).remove().draw(false);;
         }
         function read()
         {
@@ -80,8 +82,74 @@
                 $("#comp").text(data)
             })
         }
-        $(document).ready(function ()
+
+
+        
+        function DeleteRows() {
+            data_table.clear().draw()
+        }
+        function load_data_to_table(data) {
+            DeleteRows()
+            let count = 1
+            data.forEach(function (i) {
+                let txt = i["isSame"] == true ? "<i class='fa fa-check text-success'><span style='display:none'>Yes</span>" : "<i class='fa fa-times text-danger'><span style='display:none'>No</span>"
+                let fileOnePath = "Not Found"
+                let fileTwoPath = "Not Found"
+                let fileOneLines = 0
+                let fileTwoLines = 0
+                try {
+                    fileOneLines = i["lines"]["fileOne"]
+                    fileOnePath = i["filePath"]["fileOne"]
+                }
+                catch { }
+                try {
+                    fileTwoLines = i["lines"]["fileTwo"]
+                    fileTwoPath = i["filePath"]["fileTwo"]
+                }
+                catch { }
+                let tdOne = count
+                let tdTwo = i["fileName"]["fileOne"]
+                let tdThree = i["fileName"]["fileTwo"]
+                let tdFour = txt
+                let tdFive = "<a target='_blank' href='../../Home/readContents?pathOne=" + i["filePath"]["fileOne"] + "&pathTwo=" + i["filePath"]["fileTwo"] + "'> <i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(this)' class='fa fa-trash'></i></a>"
+                let tdSix = fileOneLines
+                let tdSeven = fileOnePath
+                let tdEight = fileTwoLines
+                let tdNine = fileTwoPath
+                data_table.row.add([tdOne, tdTwo, tdThree, tdFour, tdFive, tdSix, tdSeven, tdEight, tdNine]).draw(false);
+                count++
+            })
+        }
+
+
+
+        function reloadData()
         {
+            //$(".table").hide()
+            //$(".table-loader").show()
+            toastr.info("Reloading Data")
+
+            $.ajax(
+                {
+                    type: "POST",
+                    url: "../../Home/read",
+                    data:
+                    {
+                        folderOnePath: $(".fileNameOne").attr("name"), folderTwoPath: $(".fileNameTwo").attr("name")
+                    },
+                    success: function (data)
+                    {
+                        load_data_to_table(data)
+                        toastr.info("Reload Successful")
+                        //$(".table-loader").hide()
+
+                        //$(".table").show()
+                    }
+                })
+        }
+        
+
+        function loadData() {
             $.ajax({
                 type: "POST",
                 url: "../../Home/read",
@@ -89,64 +157,9 @@
                 {
                     folderOnePath: $(".fileNameOne").attr("name"), folderTwoPath: $(".fileNameTwo").attr("name")
                 },
-                success: function (data)
-                {
-                    var raw = ""
-                    var temp = ""
-                    let count = 1
-                    data.forEach(function (i)
-                    {
-                        console.log(i)
-                        console.log(i["isSame"])
-                        let txt = i["isSame"] == true ? "<i class='fa fa-check text-success'><span style='display:none'>Yes</span>" : "<i class='fa fa-times text-danger'><span style='display:none'>No</span>"
-                        try
-                        {
-                            temp = ""
-                            temp += "<tr class='"+(count)+"'"
-                            //temp += i["isSame"] == false ? 'red' : 'green'
-                            temp += "><td>" + (count) + "</td><td title='" + i["filePath"]["fileOne"] + "'>"
-                            temp += i["fileName"]["fileOne"]
-                            temp += "</td><td title='" + i["filePath"]["fileTwo"] + "'>"
-                            temp += i["fileName"]["fileTwo"]
-                            temp += "</td>"
-                            temp += "<td class='text-center'>"
-                            temp += txt
-                            temp += "</td><td><a target='_blank' href='../../Home/readContents?pathOne=" + i["filePath"]["fileOne"] + "&pathTwo=" + i["filePath"]["fileTwo"] + "'> <i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(" + count + ")' class='fa fa-trash'></i></a> </td>"
-                            temp += "<td>"+i["lines"]["fileOne"]+"</td>"
-                            temp += "<td>" + i["filePath"]["fileOne"]+"</td><td>"
-                            temp += i["lines"]["fileTwo"]
-                            temp += "</td><td>" + i["filePath"]["fileTwo"]+"</td></td></tr>"
-                        }
-                        catch
-                        {
-                            temp = ""
-                            temp += "<tr class='" + (count) +"'>"
-                            temp += "<td>" + (count) + "</td><td>"
-                            temp += i["fileName"]["fileOne"] + "</td><td>" + i["fileName"]["fileTwo"] + "</td>"
-                            let lineOne = "";
-                            let lineTwo = "";
-                            let pathOne = "Not Available";
-                            let pathTwo = "Not Available";
-                            try
-                            {
-                                pathOne = i["filePath"]["fileOne"];
-                                lineOne = i["lines"]["fileOne"]
-                            } catch { }
-                            try
-                            {
-                                pathTwo = i["filePath"]["fileTwo"];
-                                lineTwo = i["lines"]["fileTwo"]
-                            } catch { }
-                            temp += "<td class='text-center'>" + txt + "</td>"
-                            temp += "<td><a target='_blank' href='../../Home/readContents?pathOne=" + pathOne + "&pathTwo=" + pathTwo + "'><i class='fa fa-eye'></i></a> | <a href='#' ><i onclick='Delete(" + count + ")' class='fa fa-trash'></i></a></td>"
-                            temp += "<td>" + lineOne + "</td><td>" + pathOne + "</td>"
-                            temp += "<td>" + lineTwo + "</td><td>" + pathTwo + "</td></tr>"
-                        }
-                        raw += temp
-                        count++
-                    })
+                success: function (data) {
+                   
                     $(".table-loader").hide()
-                    $("#body").html(raw)
                     data_table = $('.table').DataTable({
                         responsive: true, dom: 'Bfrtip',
                         ////rowReorder: true,
@@ -157,7 +170,6 @@
                         buttons: [
                             {
                                 extend: 'excelHtml5',
-                                footer: true,
                                 exportOptions:
                                 {
                                     columns: [0, 1, 2, 3, 5, 6, 7, 8]
@@ -165,20 +177,24 @@
                             },
                             //'excelHtml5',
                             'csvHtml5',
-                            'colvis'//,
-                            //{
-                            //    extend: 'pdf',
-                            //    footer: true,
-                            //    exportOptions: {
-                            //        columns: [0, 1, 2, 3,5,6,7,8]
-                            //    }
-                            //}
+                            'colvis',
+                            {
+                                text: '<i class="fa fa-refresh"></i>',
+                                action: function (e, dt, node, config) {
+                                    reloadData()
+                                }
+                            }
                         ]
                     });
+                    load_data_to_table(data)
                     readComp()
                     read()
                 }
             })
+        }
+        $(document).ready(function ()
+        {
+            loadData()
         })
     </script>
 </body>

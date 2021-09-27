@@ -12,6 +12,7 @@ namespace File_Comparison.Models
         public int numberOfLines { get; set; }
         public string fileType { get; set; }
         public bool isSame = false;
+        //public string parentDirectory { get; set; }
         public FileProperties()
         {
 

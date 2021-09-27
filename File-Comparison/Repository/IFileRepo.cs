@@ -1,8 +1,5 @@
 ﻿using File_Comparison.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace File_Comparison.Repositiry
 {

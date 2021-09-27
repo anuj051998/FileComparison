@@ -1,13 +1,7 @@
-﻿using File_Comparison.Models;
-using File_Comparison.Repositiry;
+﻿using File_Comparison.Repositiry;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace File_Comparison.Controllers
 {
